@@ -60,3 +60,4 @@ export const routes: RouteItem[] = [
 ```
 
 只需要配置这个 routes，即可同时生成路由和菜单
+![image](https://github.com/user-attachments/assets/009dc385-3927-4a2f-afef-5b6c4c312fb7)
