@@ -1,5 +1,4 @@
 import { Layout, Menu } from "antd";
-import clsx from "clsx";
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { renderMenuItems, routes } from "../config/routes";
@@ -31,13 +30,8 @@ export default function MainLayout() {
           }}
         />
       </Sider>
-      <Layout
-        className={clsx(
-          "transition-[margin] duration-200 min-h-screen",
-          collapsed ? "ml-20" : "ml-[200px]"
-        )}
-      >
-        <Content className="p-6 min-h-[calc(100vh-64px)]">
+      <Layout>
+        <Content className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
           <Outlet />
         </Content>
       </Layout>

@@ -7,4 +7,10 @@ module.exports = {
       },
     },
   },
+  safelist: [
+    'border-green-500',
+    'border-red-500',
+    'max-w-[1200px]',
+    'min-w-[250px]'
+  ]
 };

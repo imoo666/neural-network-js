@@ -1,11 +1,11 @@
-import { HomeOutlined, SettingOutlined, UserOutlined } from "@ant-design/icons";
+import { HomeOutlined } from "@ant-design/icons";
 import { GetProp, Menu, MenuProps } from "antd";
 import { ReactNode } from "react";
-import { Outlet, Route, RouteObject } from "react-router-dom";
+import { Route, RouteObject } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import Home from "../pages/home/Index";
-import Account from "../pages/settings/account";
-import Profile from "../pages/settings/profile";
+import { IrisPage } from "../pages/iris";
+import { CatDogPage } from "../pages/cat-dog";
 
 interface Menu {
   title: string;
@@ -27,24 +27,17 @@ export const routes: RouteItem[] = [
       {
         path: "home",
         element: <Home />,
-        menu: { title: "主页", icon: <HomeOutlined /> },
+        menu: { title: "主页" },
       },
       {
-        path: "settings",
-        element: <Outlet />,
-        menu: { title: "设置", icon: <SettingOutlined /> },
-        children: [
-          {
-            path: "account",
-            element: <Account />,
-            menu: { title: "账户设置", icon: <UserOutlined /> },
-          },
-          {
-            path: "profile",
-            element: <Profile />,
-            menu: { title: "个人资料", icon: <UserOutlined /> },
-          },
-        ],
+        path: "iris",
+        element: <IrisPage />,
+        menu: { title: "鸢尾花分类" },
+      },
+      {
+        path: "cat-dog-classification",
+        element: <CatDogPage />,
+        menu: { title: "猫狗分类" },
       },
     ],
   },
