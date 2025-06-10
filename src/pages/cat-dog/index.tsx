@@ -1,6 +1,8 @@
 import * as tf from "@tensorflow/tfjs";
 import { Button, Card, List, Tag } from "antd";
 import { useState } from "react";
+import { InfoCard } from "../../components/InfoCard";
+import { ResultTitle } from "../../components/ResultTitle";
 
 type ImageData = {
   path: string;
@@ -25,20 +27,21 @@ type Prediction = {
 
 const preprocessImage = (img: HTMLImageElement): HTMLCanvasElement => {
   const canvas = document.createElement("canvas");
-  canvas.width = 128;
-  canvas.height = 128;
+  const BASE_SIZE = 64;
+  canvas.width = BASE_SIZE;
+  canvas.height = BASE_SIZE;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
 
-  const ratio = Math.min(128 / img.width, 128 / img.height);
+  const ratio = Math.min(BASE_SIZE / img.width, BASE_SIZE / img.height);
   const newWidth = img.width * ratio;
   const newHeight = img.height * ratio;
 
   ctx.drawImage(
     img,
-    (128 - newWidth) / 2,
-    (128 - newHeight) / 2,
+    (BASE_SIZE - newWidth) / 2,
+    (BASE_SIZE - newHeight) / 2,
     newWidth,
     newHeight
   );
@@ -57,14 +60,7 @@ export const CatDogPage = () => {
     logs: [],
   });
 
-  // 测试样本和预测结果
-  const [testState, setTestState] = useState<{
-    samples: ImageData[];
-    predictions: Prediction[];
-  }>({
-    samples: [],
-    predictions: [],
-  });
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
 
   // 加载单张图片
   const loadImage = async (
@@ -107,8 +103,6 @@ export const CatDogPage = () => {
     const trainSamples = images.slice(0, images.length - 50);
     const testSamples = images.slice(-50);
 
-    setTestState((prev) => ({ ...prev, samples: testSamples }));
-
     const xData = tf.stack(trainSamples.map((d) => d.tensor)) as tf.Tensor4D;
     const yData = tf.oneHot(
       tf.tensor1d(
@@ -125,22 +119,17 @@ export const CatDogPage = () => {
   const defineModel = () => {
     const model = tf.sequential({
       layers: [
-        tf.layers.maxPooling2d({
-          inputShape: [128, 128, 3],
-          poolSize: 2,
-          strides: 2,
-        }),
         tf.layers.conv2d({
+          inputShape: [64, 64, 3],
           filters: 32,
           kernelSize: 3,
           activation: "relu",
           padding: "same",
         }),
+        tf.layers.maxPooling2d({ poolSize: 2, strides: 2 }),
         tf.layers.flatten(),
-        tf.layers.dense({
-          units: 2,
-          activation: "softmax",
-        }),
+        tf.layers.dropout({ rate: 0.3 }),
+        tf.layers.dense({ units: 2, activation: "softmax" }),
       ],
     });
 
@@ -161,9 +150,9 @@ export const CatDogPage = () => {
     const { xData, yData, testSamples } = await loadAndPrepareData();
 
     await model.fit(xData, yData, {
-      epochs: 10,
-      batchSize: 4,
-      validationSplit: 0.4,
+      epochs: 20,
+      batchSize: 8,
+      validationSplit: 0.2,
       callbacks: {
         onEpochEnd: (epoch, logs) => {
           if (!logs) return;
@@ -211,7 +200,7 @@ export const CatDogPage = () => {
       };
     });
 
-    setTestState((prev) => ({ ...prev, predictions }));
+    setPredictions(predictions);
   };
 
   return (
@@ -232,6 +221,13 @@ export const CatDogPage = () => {
         )}
       </div>
 
+      <InfoCard
+        className="!mb-6"
+        title="猫狗识别"
+        accuracy={65}
+        rounds={20}
+        totalTime={2}
+      />
       <Card title="训练进度" className="!mb-6 max-h-[300px] overflow-y-auto">
         {modelState.logs.length > 0 ? (
           <List
@@ -256,11 +252,11 @@ export const CatDogPage = () => {
         )}
       </Card>
 
-      <Card title="预测结果">
-        {modelState.model && testState.predictions.length > 0 ? (
+      <Card title={<ResultTitle predictions={predictions} />}>
+        {modelState.model && predictions.length > 0 ? (
           <List
             bordered
-            dataSource={testState.predictions}
+            dataSource={predictions}
             renderItem={(item) => (
               <List.Item style={{ color: item.correct ? "green" : "red" }}>
                 <div className="flex justify-between w-full gap-4 items-center">

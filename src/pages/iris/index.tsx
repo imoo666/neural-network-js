@@ -1,10 +1,19 @@
 import * as tf from "@tensorflow/tfjs";
 import { Button, Card, List } from "antd";
 import { useState } from "react";
+import { InfoCard } from "../../components/InfoCard";
+import { ResultTitle } from "../../components/ResultTitle";
 
 interface IrisData {
   features: number[];
   label: "setosa" | "versicolor" | "virginica";
+}
+interface PredictionResult {
+  label: string;
+  confidence: number;
+  correct: boolean;
+  features: number[];
+  actual: string;
 }
 
 export const IrisPage = () => {
@@ -18,19 +27,7 @@ export const IrisPage = () => {
     logs: [],
   });
 
-  const [testState, setTestState] = useState<{
-    samples: IrisData[];
-    predictions: {
-      label: string;
-      confidence: number;
-      correct: boolean;
-      features: number[];
-      actual: string;
-    }[];
-  }>({
-    samples: [],
-    predictions: [],
-  });
+  const [predictions, setPredictions] = useState<PredictionResult[]>([]);
 
   // 1. 加载和准备数据
   const loadAndPrepareData = async () => {
@@ -48,25 +45,24 @@ export const IrisPage = () => {
       });
 
     tf.util.shuffle(data);
-    setTestState((prev) => ({ ...prev, samples: data.slice(140) }));
 
-    const xs = tf.tensor2d(data.slice(0, 140).map((d) => d.features));
+    const xs = tf.tensor2d(data.slice(0, 130).map((d) => d.features));
     const ys = tf.oneHot(
       tf.tensor1d(
         data
-          .slice(0, 140)
+          .slice(0, 130)
           .map((d) => ["setosa", "versicolor", "virginica"].indexOf(d.label)),
         "int32"
       ),
       3
     );
 
-    return { xs, ys, testSamples: data.slice(140) };
+    return { xs, ys, testSamples: data.slice(-20) };
   };
 
   // 2. 定义模型
   const defineModel = () => {
-    return tf.sequential({
+    const model = tf.sequential({
       layers: [
         tf.layers.dense({ units: 6, activation: "relu", inputShape: [4] }),
         tf.layers.dense({ units: 6, activation: "relu" }),
@@ -74,12 +70,6 @@ export const IrisPage = () => {
         tf.layers.dense({ units: 3, activation: "softmax" }),
       ],
     });
-  };
-
-  // 3. 训练模型
-  const trainModel = async () => {
-    setModelState({ model: null, isTraining: true, logs: [] });
-    const model = defineModel();
 
     model.compile({
       optimizer: tf.train.adam(0.05),
@@ -87,11 +77,19 @@ export const IrisPage = () => {
       metrics: ["accuracy"],
     });
 
+    return model;
+  };
+
+  // 3. 训练模型
+  const trainModel = async () => {
+    setModelState({ model: null, isTraining: true, logs: [] });
+    const model = defineModel();
+
     const { xs, ys, testSamples } = await loadAndPrepareData();
 
     await model.fit(xs, ys, {
-      epochs: 100,
-      batchSize: 32,
+      epochs: 20,
+      batchSize: 8,
       validationSplit: 0.2,
       callbacks: {
         onEpochEnd: (epoch, logs) => {
@@ -112,7 +110,7 @@ export const IrisPage = () => {
     });
 
     // 训练完成后用模型预测10个测试样本
-    predictSamples(model, testSamples.slice(0, 10));
+    predictSamples(model, testSamples);
 
     setModelState((prev) => ({ ...prev, model, isTraining: false }));
   };
@@ -138,10 +136,7 @@ export const IrisPage = () => {
       };
     });
 
-    setTestState((prev) => ({
-      ...prev,
-      predictions,
-    }));
+    setPredictions(predictions);
   };
 
   return (
@@ -161,6 +156,13 @@ export const IrisPage = () => {
         )}
       </div>
 
+      <InfoCard
+        className="!mb-6"
+        title="鸢尾花"
+        accuracy={95}
+        rounds={20}
+        totalTime={0.1}
+      />
       <Card title="训练进度" className="!mb-6">
         <div className="max-h-[300px] overflow-y-auto">
           {modelState.logs.length > 0 ? (
@@ -187,11 +189,11 @@ export const IrisPage = () => {
         </div>
       </Card>
 
-      <Card title="预测结果">
-        {modelState.model && testState.predictions.length > 0 ? (
+      <Card title={<ResultTitle predictions={predictions} />}>
+        {modelState.model && predictions.length > 0 ? (
           <List
             bordered
-            dataSource={testState.predictions}
+            dataSource={predictions}
             renderItem={(item) => (
               <List.Item style={{ color: item.correct ? "green" : "red" }}>
                 <div className="flex justify-between w-full gap-4">

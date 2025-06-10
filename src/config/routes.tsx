@@ -1,11 +1,12 @@
-import { HomeOutlined } from "@ant-design/icons";
 import { GetProp, Menu, MenuProps } from "antd";
 import { ReactNode } from "react";
 import { Route, RouteObject } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import { CatDogPage } from "../pages/cat-dog";
 import Home from "../pages/home/Index";
 import { IrisPage } from "../pages/iris";
-import { CatDogPage } from "../pages/cat-dog";
+import { MnistPage } from "../pages/mnist";
+import { BinaryRnnPage } from "../pages/binary";
 
 interface Menu {
   title: string;
@@ -39,6 +40,16 @@ export const routes: RouteItem[] = [
         element: <CatDogPage />,
         menu: { title: "猫狗分类" },
       },
+      {
+        path: "mnist",
+        element: <MnistPage />,
+        menu: { title: "手写数字识别" },
+      },
+      // {
+      //   path: "binary-rnn",
+      //   element: <BinaryRnnPage />,
+      //   menu: { title: "二进制字符预测" },
+      // },
     ],
   },
   {
